@@ -1,0 +1,35 @@
+---
+title: "Simple Forecasting - COVID"
+author: "Runzhao Xie"
+date: "2022-08-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(fpp2)
+library(ggplot2)
+library(tseries)
+```
+
+```{r}
+data = read.csv("C:/Users/Runzhao Xie/Desktop/new.csv")
+beforecovid.ts <- ts(data[,2],start=c(1967,1),end=c(2020,11),freq=52)
+AfterCOVID.ts <- ts(data[,2],start=c(2020,12),end=c(2022),freq=52)
+```
+
+```{r}
+beforecovid.fc  <- window(beforecovid.ts)
+beforecovid_fc  <- naive(beforecovid.ts)
+beforecovid_sfc  <- snaive(beforecovid.ts)
+beforecovid_drift  <- rwf(beforecovid.ts,h=10,drift=TRUE)
+help(rwf)
+autoplot(beforecovid.fc)
+autoplot(beforecovid_fc)
+autoplot(beforecovid_sfc)
+autoplot(beforecovid_drift)
+```
+

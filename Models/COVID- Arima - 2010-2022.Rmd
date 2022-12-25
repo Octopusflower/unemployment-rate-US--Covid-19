@@ -1,0 +1,119 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(fpp2)
+library(ggplot2)
+library(tseries)
+```
+
+
+```{r}
+data = read.csv("C:/Users/Runzhao Xie/Desktop/new.csv")
+data201022 = read.csv("C:/Users/Runzhao Xie/Desktop/2010-2022.csv")
+beforecovid.ts <- ts(data201022[,2],start=c(2010,1),end=c(2022,33),freq=52)
+beforecovid.ts
+```
+
+
+```{r}
+autoplot(beforecovid.ts)+
+  ggtitle("Continued Claimes in US 2010-2022") +
+  xlab("Year") + ylab("# of Claims") 
+autoplot(AfterCOVID.ts)+
+  ggtitle("Continued Claimes in US 2020-2022") +
+  xlab("Year") + ylab("# of Claims") 
+```
+
+
+```{r}
+plot(log(beforecovid.ts),ylab="Log # of Claims before COVID")
+plot(diff(log(beforecovid.ts)),ylab="Diff of Log # of Claims before COVID")
+
+beforecovid.diff  <- diff(log(beforecovid.ts))
+logbeforecovid   <- log(beforecovid.ts)
+
+```
+
+
+```{r}
+require(graphics)
+
+acf(beforecovid.diff,lag.max=52,type = "correlation")
+
+pacf(beforecovid.diff,lag.max=52)
+
+#When lag=52, x-lab is too small
+
+#Comment: The differenced log is not white noise based on acf and pacf graphs
+```
+
+```{r}
+adf.test(beforecovid.diff)
+kpss.test(beforecovid.diff)
+#The tests show the difference to be stationary
+```
+
+#_______No Changes Before this Line
+
+
+```{r}
+library(forecast)
+
+best.fit1 <- auto.arima(logbeforecovid)
+
+```
+
+
+```{r}
+number.parameters <- length(best.fit1$coef) + 1
+n = length(logbeforecovid)
+best.fit.AIC <- -2*best.fit1$loglik + 2*number.parameters
+best.fit.BIC <- -2*best.fit1$loglik + log(n)*number.parameters
+best.fit.AIC
+best.fit.BIC
+checkresiduals(best.fit1)
+
+```
+
+```{r}
+h <- 52
+
+forecast <- predict(best.fit1,n.ahead=12)
+
+
+exp(accuracy(best.fit1))
+    
+plot(forecast$pred,ylab="Predicted Log of Before COVID")
+lines(forecast$pred+1.96*forecast$se,lty=2,col="red")
+lines(forecast$pred-1.96*forecast$se,lty=2,col="red")
+
+
+plot(exp(forecast$pred),ylab="Predicted of Log of Before COVID",xaxt="n",ylim=(c(exp(13.8),exp(14.8))))
+axis(side=1, at = c(2022.1,2022.2,2022.3,2022.4,2022.5,2022.6,2022.7,2022.8,2022.9))
+lines(exp(forecast$pred+1.96*forecast$se),lty=2,col="red")
+lines(exp(forecast$pred-1.96*forecast$se),lty=2,col="red")
+print(exp(forecast$pred))
+```
+
+```{r}
+Merge= ts( c(beforecovid.ts, exp(forecast$pred)), start = start(beforecovid.ts),  frequency = frequency(beforecovid.ts) )
+
+plot(Merge,ylab="Predicted Log of Before COVID")
+lines(Merge+1.96*forecast$se,lty=2,col="red")
+lines(Merge-1.96*forecast$se,lty=2,col="red")
+```
+
+
+
+
+
+
+
+####__________________

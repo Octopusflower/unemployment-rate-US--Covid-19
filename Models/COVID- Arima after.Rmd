@@ -1,0 +1,114 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(fpp2)
+library(ggplot2)
+library(tseries)
+```
+
+
+```{r}
+data = read.csv("C:/Users/zhang/Desktop/time/final/new.csv")
+
+beforecovid.ts <- ts(data[,2],start=c(2000,12),end=c(2022,31),freq=52)
+AfterCOVID.ts <- ts(data[,2],start=c(2010,1),end=c(2022,31),freq=52)
+```
+
+
+```{r}
+autoplot(beforecovid.ts)+
+  ggtitle("Continued Claimes in US 1967-2020") +
+  xlab("Year") + ylab("# of Claims") 
+autoplot(AfterCOVID.ts)+
+  ggtitle("Continued Claimes in US 2020-2022") +
+  xlab("Year") + ylab("# of Claims") 
+```
+
+
+```{r}
+plot(log(AfterCOVID.ts),ylab="Log # of Claims after COVID")
+plot(diff(log(AfterCOVID.ts)),ylab="Diff of Log # of Claims after COVID")
+
+AfterCOVID.diff  <- diff(log(AfterCOVID.ts))
+logAfterCOVID   <- log(AfterCOVID.ts)
+
+### Not sure if this is helpful. 
+plot(diff(AfterCOVID.diff,lag=52),ylab="Diff lag 52 of Log # of Claims after COVID")
+```
+
+
+```{r}
+require(graphics)
+
+acf(logAfterCOVID ,lag.max=52,type = "correlation")
+
+pacf(AfterCOVID.ts,lag.max=52)
+
+#When lag=52, x-lab is too small
+
+#Comment: The differenced log is not white noise based on acf and pacf graphs
+```
+
+```{r}
+adf.test(AfterCOVID.diff)
+kpss.test(logAfterCOVID)
+#The tests show the difference to be stationary
+```
+
+####__________________
+
+
+
+```{r}
+library(forecast)
+
+###The previous codes will take long to run, so here is the best fit model given. c(7,1,7) & c(1,0,1)
+best.fitAFTER <-auto.arima(logAfterCOVID) 
+best.fitAFTER
+
+checkresiduals(best.fitAFTER)
+
+```
+
+
+```{r}
+h <- 52
+forecast <- predict(best.fitAFTER,n.ahead=12)
+
+
+###Best.fit was defined above, and now we're using it to forecast
+
+plot(forecast$pred,ylab="Predicted Log of Beer Production")
+lines(forecast$pred+1.96*forecast$se,lty=2,col="red")
+lines(forecast$pred-1.96*forecast$se,lty=2,col="red")
+
+
+plot(exp(forecast$pred),ylab="Predicted of CC After Covid",ylim=(c(exp(14.2),exp(14.9))))
+lines(exp(forecast$pred+1.96*forecast$se),lty=2,col="red")
+lines(exp(forecast$pred-1.96*forecast$se),lty=2,col="red")
+
+print(exp(forecast$pred))
+```
+
+
+```{r}
+
+Arima(logAfterCOVID,order=c(7,1,7),
+                                 seas=list(order=c(1,0,1),period=12))
+best.fit
+number.parameters <- length(best.fit$coef) + 1
+n = length(log(beer.ts))
+best.fit.AIC <- -2*best.fit$loglik + 2*number.parameters
+best.fit.BIC <- -2*best.fit$loglik + log(n)*number.parameters
+best.fit.AIC
+best.fit.BIC
+checkresiduals(best.fit)
+###This step is used to check is the residual looks like white noise. Mean 0 and 95% within the critical values range. 
+```

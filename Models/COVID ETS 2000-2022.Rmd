@@ -1,0 +1,145 @@
+---
+title: "Exponential Smoothing Forecast - Claims"
+author: "Runzhao Xie"
+date: "2022-08-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(fpp2)
+library(ggplot2)
+library(tseries)
+```
+
+
+```{r}
+data = read.csv("C:/Users/Runzhao Xie/Desktop/2000-2022.csv")
+beforecovid.ts <- ts(data[,2],start=c(2000,1),end=c(2022,35),freq=52)
+beforecovid.ts
+```
+
+```{r}
+#Define Functions
+beforecovid.ses = ses(beforecovid.ts, h=500)
+beforecovid.holt = holt(beforecovid.ts, h=500)
+beforecovid.holtdamp = holt(beforecovid.ts, damped = TRUE, h=500)
+```
+
+```{r}
+#Plot Functions
+autoplot(beforecovid.ses)
+autoplot(beforecovid.holt)
+autoplot(beforecovid.holtdamp)
+```
+
+```{r}
+#Compare Accuracies
+accuracy(beforecovid.ses)
+accuracy(beforecovid.holt)
+accuracy(beforecovid.holtdamp)
+
+#Holtdamp is the most accurate
+```
+
+```{r}
+checkresiduals(beforecovid.ses)
+checkresiduals(beforecovid.holt)
+checkresiduals(beforecovid.holtdamp)
+
+#Comment: All three are not white noise
+```
+
+###______________
+
+
+#Comment: Then we attempted to log and difference the series
+
+```{r}
+plot(log(beforecovid.ts),ylab="Log # of Claims before COVID")
+plot(diff(log(beforecovid.ts)),ylab="Diff of Log # of Claims before COVID")
+
+beforecovid.diff  <- diff(diff(log(beforecovid.ts)))
+```
+
+```{r}
+#Define Functions
+beforecovidlog.holtdamp = holt(beforecovid.diff, damped = TRUE, h=100)
+```
+
+```{r}
+checkresiduals(beforecovidlog.holtdamp)
+
+#Comment: The residual still has patterns
+```
+
+#_______________
+
+```{r}
+help(ets)
+```
+
+
+```{r}
+autoplot(beforecovid.ts)
+print(beforecovid.ts)
+```
+```{r}
+
+
+# Train-test split
+beforecovid.train = window(beforecovid.ts, end=c(2022,1))
+beforecovid.test  = window(beforecovid.ts, start=c(2022,2))
+# Estimate parameters using training data
+beforecovid.model1 = ets(beforecovid.train, model = "ANN")
+#beforecovid.model2 = ets(beforecovid.train, model = "ANA") #Frequency too high
+#beforecovid.model3 = ets(beforecovid.train, model = "ANM") #Frequency too high
+beforecovid.model4 = ets(beforecovid.train, model = "AAN")
+# beforecovid.model5 = ets(beforecovid.train, model = "AAA") #Frequency too high
+# beforecovid.model6 = ets(beforecovid.train, model = "AAM") #Frequency too high
+# beforecovid.model7 = ets(beforecovid.train, model = "AMN") #Forbidden model combination
+# beforecovid.model8 = ets(beforecovid.train, model = "AMA") #Frequency too high
+# beforecovid.model9 = ets(beforecovid.train, model = "AMM") #Frequency too high
+beforecovid.model10 = ets(beforecovid.train, model = "MNN")
+# beforecovid.model11 = ets(beforecovid.train, model = "MNA") #Frequency too high
+# beforecovid.model12 = ets(beforecovid.train, model = "MNM") #Frequency too high
+beforecovid.model13 = ets(beforecovid.train, model = "MAN")
+# beforecovid.model14 = ets(beforecovid.train, model = "MAA") #Frequency too high
+# beforecovid.model15 = ets(beforecovid.train, model = "MAM") #Frequency too high
+beforecovid.model16 = ets(beforecovid.train, model = "MMN")
+#beforecovid.model17 = ets(beforecovid.train, model = "MMA") #Frequency too high
+#beforecovid.model18 = ets(beforecovid.train, model = "MMM") #Frequency too high
+```
+
+```{r}
+accuracy(forecast(beforecovid.model1),beforecovid.test) 
+accuracy(forecast(beforecovid.model4),beforecovid.test) 
+accuracy(forecast(beforecovid.model10),beforecovid.test) 
+accuracy(forecast(beforecovid.model13),beforecovid.test) 
+accuracy(forecast(beforecovid.model16),beforecovid.test) 
+```
+
+```{r}
+beforecovid.model.full = ets(beforecovid.ts, model = "AAN")
+autoplot(beforecovid.model.full)
+```
+```{r}
+AIC(beforecovid.model.full)
+BIC(beforecovid.model.full)
+```
+
+
+
+```{r}
+autoplot(forecast(beforecovid.model.full))
+print(forecast(beforecovid.model.full))
+```
+
+```{r}
+checkresiduals(beforecovid.model.full)
+
+#Comment: The residual is not white noise.
+```
