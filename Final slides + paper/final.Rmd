@@ -1,0 +1,89 @@
+---
+title: "Final"
+author: "Aijia Zhang"
+date: '2022-08-19'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(readr)
+library(ggplot2)
+library(lubridate)
+library(forecast)
+DATA <- read_csv("C:/Users/zhang/Desktop/time/final/CCSA.csv")
+
+DATA2 <- DATA[2724:2880,]
+
+
+CC.ts <- ts(DATA[,2], start=2724, end=2880)
+
+
+CC.ts2 <- ts(DATA[,2], start=2567, end=2880, frequency = 52)
+
+```
+
+
+
+```{r}
+autoplot(CC.ts)
+```
+
+```{r}
+ggtsdisplay(CC.ts)
+```
+
+
+```{r}
+CCTS.ses = ses(CC.ts, h=100)
+CCTS.holt = holt(CC.ts, h=100)
+CCTS.holtdamp = holt(CC.ts, damped = TRUE, h=100)
+
+```
+
+```{r}
+autoplot(CCTS.ses)
+autoplot(CCTS.holt)
+autoplot(CCTS.holtdamp)
+```
+
+```{r}
+accuracy(CCTS.ses)
+```
+
+```{r}
+accuracy(CCTS.holt)
+```
+
+```{r}
+accuracy(CCTS.holtdamp)
+```
+
+
+
+
+_the ACF show the series is stationary._
+
+
+
+
+
+```{r}
+plot(CC.ts2,ylab="Continued Claims-since 2016")
+```
+
+
+
+
+```{r}
+fit <- auto.arima(CC.ts)
+fit
+```
+
+
+
+```{r}
+forecast(fit, 5)
+```
+
